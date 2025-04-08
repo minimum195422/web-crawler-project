@@ -108,7 +108,7 @@ class ImageDownloader:
             
         return ext.lower()
     
-    def _generate_s3_key(self, url: str, product_id: str, variation: str) -> str:
+    def _generate_s3_key(self, url: str, source: str, product_id: str, variation: str) -> str:
         # Tạo key S3 duy nhất cho hình ảnh
         url_hash = hashlib.md5(url.encode()).hexdigest()[:10]
         ext = self._get_image_extension(url)
@@ -282,7 +282,14 @@ class ImageDownloader:
         # Lấy nguồn dữ liệu và ID sản phẩm
         source = product_data.get('source', 'unknown')
         product_url = product_data.get('url', '')
-        product_id = f"{source}_{self._extract_product_id(product_url)}"
+        # Trích xuất ID sản phẩm từ URL
+        if 'lazada.vn/products/' in product_url:
+            try:
+                product_id = product_url.split('/')[-1].split('.')[0]
+            except:
+                product_id = hashlib.md5(product_url.encode()).hexdigest()
+        else:
+            product_id = hashlib.md5(product_url.encode()).hexdigest()
         
         # Cố gắng trích xuất ID sản phẩm từ URL
         if 'lazada.vn/products/' in product_url:

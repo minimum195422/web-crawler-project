@@ -22,7 +22,7 @@ fi
 mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins /opt/airflow/data
 
 # Cấp quyền cho thư mục
-chown -R "${AIRFLOW_UID}:${AIRFLOW_GID}" /opt/airflow/logs /opt/airflow/data
+chown -R "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}" /opt/airflow/logs /opt/airflow/data
 
 # Chạy lệnh truyền vào
 exec airflow "$@"
