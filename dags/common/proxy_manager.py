@@ -37,10 +37,16 @@ class ProxyManager:
         try:
             params = {"key": self.api_key}
             
-            # Thêm nhà mạng nếu được chỉ định
+            # Thêm nhà mạng ngẫu nhiên
             if self.networks:
                 network = random.choice(self.networks)
                 params["nhamang"] = network
+            else:
+                # Nếu không có danh sách nhà mạng, sử dụng "Random"
+                params["nhamang"] = "Random"
+            
+            # Thêm tỉnh thành "0" để lấy ngẫu nhiên
+            params["tinhthanh"] = "0"
             
             response = requests.get(self.base_url, params=params)
             data = response.json()

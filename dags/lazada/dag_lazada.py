@@ -47,7 +47,7 @@ dag = DAG(
     'lazada_crawler',
     default_args=default_args,
     description='Crawl dữ liệu sản phẩm từ Lazada',
-    schedule_interval=timedelta(days=1),  # Chạy hàng ngày
+    schedule_interval=timedelta(hours=2),  # Chạy hàng ngày
     catchup=False,
     tags=['crawler', 'lazada', 'ecommerce'],
 )
