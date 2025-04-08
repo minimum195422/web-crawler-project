@@ -27,7 +27,7 @@ class LazadaCrawler:
     def __init__(
         self,
         proxy_manager: Optional[ProxyManager] = None,
-        max_concurrent_tabs: int = 5,
+        max_concurrent_tabs: int = 6,  # Thay đổi mặc định thành 6 tab
         min_request_interval: int = 25,
         max_request_interval: int = 40,
         max_products: int = 100,
@@ -62,10 +62,13 @@ class LazadaCrawler:
         # Tạo thư mục lưu dữ liệu nếu chưa tồn tại
         os.makedirs(output_dir, exist_ok=True)
     
-    def _init_driver(self) -> webdriver.Chrome:
+    def _init_driver(self, tab_idx: int = 0) -> webdriver.Chrome:
         """
         Khởi tạo trình duyệt Chrome với các tùy chọn phù hợp
         
+        Args:
+            tab_idx: Chỉ mục của tab, dùng để chọn proxy phù hợp
+            
         Returns:
             Đối tượng WebDriver
         """
@@ -94,11 +97,12 @@ class LazadaCrawler:
             "profile.password_manager_enabled": False
         })
         
-        # Thêm proxy nếu có
+        # Thêm proxy nếu có, dựa vào tab_idx
         if self.proxy_manager:
-            proxy = self.proxy_manager.get_formatted_http_proxy()
+            proxy = self.proxy_manager.get_formatted_http_proxy(tab_idx)
             if proxy:
                 chrome_options.add_argument(f"--proxy-server={proxy}")
+                logger.info(f"Tab {tab_idx} sử dụng proxy: {proxy}")
         
         driver = webdriver.Chrome(options=chrome_options)
         driver.set_page_load_timeout(60)  # Timeout 60 giây cho việc tải trang
@@ -107,8 +111,61 @@ class LazadaCrawler:
     
     def _setup_drivers(self):
         """Khởi tạo nhiều trình duyệt theo số lượng tab tối đa"""
-        self.drivers = [self._init_driver() for _ in range(self.max_concurrent_tabs)]
+        self.drivers = []
+        for i in range(self.max_concurrent_tabs):
+            driver = self._init_driver(tab_idx=i)  # Truyền tab_idx để chọn proxy phù hợp
+            self.drivers.append(driver)
         logger.info(f"Đã khởi tạo {len(self.drivers)} trình duyệt")
+    
+    def crawl_products(self):
+        """Crawl thông tin từ tất cả các URL sản phẩm trong hàng đợi"""
+        logger.info(f"Bắt đầu crawl {min(len(self.product_queue), self.max_products)} sản phẩm")
+        
+        counter = 0
+        
+        while self.product_queue and counter < self.max_products:
+            active_crawls = []
+            available_drivers = list(range(len(self.drivers)))
+            
+            # Xử lý tối đa max_concurrent_tabs sản phẩm cùng lúc
+            while self.product_queue and available_drivers and counter < self.max_products:
+                product_url = self.product_queue.pop()
+                self.processed_products.add(product_url)
+                
+                driver_idx = available_drivers.pop(0)
+                driver = self.drivers[driver_idx]
+                
+                logger.info(f"Crawling sản phẩm {counter+1}/{self.max_products}: {product_url} (Tab {driver_idx})")
+                active_crawls.append((driver_idx, product_url))
+                counter += 1
+            
+            # Xử lý các crawl đang hoạt động
+            for driver_idx, product_url in active_crawls:
+                driver = self.drivers[driver_idx]
+                
+                try:
+                    # Nếu có proxy manager, đổi proxy trước mỗi request dựa vào tab_idx
+                    if self.proxy_manager:
+                        proxy = self.proxy_manager.get_formatted_http_proxy(driver_idx)
+                        if proxy:
+                            driver.execute_cdp_cmd("Network.setUserAgentOverride", {"userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"})
+                            driver.execute_cdp_cmd("Network.enable", {})
+                            driver.execute_cdp_cmd("Network.setExtraHTTPHeaders", {"headers": {"Proxy-Authorization": f"Basic {proxy}"}})
+                    
+                    product_info = self.extract_product_info(driver, product_url)
+                    if product_info:
+                        self.results.append(product_info)
+                        
+                        # Lưu kết quả ngay lập tức để tránh mất dữ liệu
+                        self._save_product(product_info)
+                        
+                except Exception as e:
+                    logger.error(f"Lỗi khi crawl sản phẩm {product_url} (Tab {driver_idx}): {str(e)}")
+                
+                # Tạm dừng giữa các request
+                self._random_sleep()
+        
+        logger.info(f"Đã hoàn thành crawl {len(self.results)}/{counter} sản phẩm thành công")
     
     def _close_drivers(self):
         """Đóng tất cả các trình duyệt"""

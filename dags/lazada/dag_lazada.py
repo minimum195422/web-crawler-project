@@ -52,7 +52,6 @@ dag = DAG(
     tags=['crawler', 'lazada', 'ecommerce'],
 )
 
-# Các hàm xử lý
 def crawl_lazada(**context):
     """
     Hàm crawl dữ liệu từ Lazada
@@ -63,22 +62,45 @@ def crawl_lazada(**context):
     
     # Tạo proxy manager
     proxy_manager = None
-    if PROXY_API_KEY:
-        proxy_manager = ProxyManager(
-            api_key=PROXY_API_KEY,
-            networks=PROXY_NETWORKS,
-            base_url=PROXY_API_URL
-        )
-        proxy_manager.start_auto_refresh(
-            min_interval=PROXY_MIN_INTERVAL,
-            max_interval=PROXY_MAX_INTERVAL
-        )
+    
+    # Kiểm tra xem có nhiều API key không
+    proxy_api_keys = os.getenv('PROXY_API_KEYS')
+    if proxy_api_keys:
+        # Phân tách các API key (được phân cách bởi dấu phẩy)
+        api_keys = [key.strip() for key in proxy_api_keys.split(',')]
+        
+        # Tạo proxy manager với nhiều API key
+        if len(api_keys) > 0:
+            proxy_manager = ProxyManager(
+                api_key=api_keys,
+                networks=PROXY_NETWORKS,
+                base_url=PROXY_API_URL,
+                tab_distribution=[3, 3]  # 3 tab cho mỗi proxy
+            )
+            proxy_manager.start_auto_refresh(
+                min_interval=PROXY_MIN_INTERVAL,
+                max_interval=PROXY_MAX_INTERVAL
+            )
+            logger.info(f"Đã khởi tạo proxy manager với {len(api_keys)} API key")
+    else:
+        # Sử dụng API key đơn nếu có
+        if PROXY_API_KEY:
+            proxy_manager = ProxyManager(
+                api_key=PROXY_API_KEY,
+                networks=PROXY_NETWORKS,
+                base_url=PROXY_API_URL
+            )
+            proxy_manager.start_auto_refresh(
+                min_interval=PROXY_MIN_INTERVAL,
+                max_interval=PROXY_MAX_INTERVAL
+            )
+            logger.info("Đã khởi tạo proxy manager với 1 API key")
     
     try:
         # Khởi tạo crawler
         crawler = LazadaCrawler(
             proxy_manager=proxy_manager,
-            max_concurrent_tabs=5,
+            max_concurrent_tabs=6,  # Tăng lên 6 tab (3 tab cho mỗi proxy)
             min_request_interval=25,
             max_request_interval=40,
             max_products=MAX_PRODUCTS,

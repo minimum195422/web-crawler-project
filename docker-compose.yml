@@ -17,6 +17,7 @@ x-airflow-common: &airflow-common
     AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-ap-southeast-1}
     # Proxy service settings
     PROXY_API_KEY: ${PROXY_API_KEY}
+    PROXY_API_KEYS: ${PROXY_API_KEYS}
     PROXY_API_URL: ${PROXY_API_URL:-https://proxyxoay.shop/api/get.php}
     PROXY_NETWORKS: ${PROXY_NETWORKS:-fpt,viettel}
     PROXY_MIN_INTERVAL: ${PROXY_MIN_INTERVAL:-60}

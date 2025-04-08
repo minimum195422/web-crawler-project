@@ -116,12 +116,13 @@ class LazadaCrawlerOperator(GenericCrawlerOperator):
     def __init__(
         self,
         max_products: int = 100,
-        max_concurrent_tabs: int = 5,
+        max_concurrent_tabs: int = 6,  # Tăng lên 6 tab (3 tab cho mỗi proxy)
         min_request_interval: int = 25,
         max_request_interval: int = 40,
         headless: bool = True,
         homepage_url: str = "https://www.lazada.vn/",
-        proxy_api_key: Optional[str] = None,
+        proxy_api_keys: Optional[List[str]] = None,
+        proxy_api_key: Optional[str] = None,  # Giữ lại để tương thích ngược
         proxy_networks: Optional[List[str]] = None,
         *args, **kwargs
     ):
@@ -135,7 +136,8 @@ class LazadaCrawlerOperator(GenericCrawlerOperator):
             max_request_interval: Thời gian tối đa giữa các request (giây)
             headless: Chạy Chrome ở chế độ không có giao diện
             homepage_url: URL trang chủ Lazada
-            proxy_api_key: API key cho dịch vụ proxy
+            proxy_api_keys: Danh sách API key cho các dịch vụ proxy
+            proxy_api_key: API key cho dịch vụ proxy (tương thích ngược)
             proxy_networks: Danh sách nhà mạng cho proxy
         """
         # Import ở đây để tránh import circular
@@ -156,11 +158,20 @@ class LazadaCrawlerOperator(GenericCrawlerOperator):
             'homepage_url': homepage_url
         }
         
-        # Chuẩn bị proxy_manager_kwargs nếu có API key
+        # Chuẩn bị proxy_manager_kwargs
         proxy_manager_class = None
         proxy_manager_kwargs = None
         
-        if proxy_api_key:
+        # Ưu tiên proxy_api_keys nếu được cung cấp
+        if proxy_api_keys:
+            proxy_manager_class = ProxyManager
+            proxy_manager_kwargs = {
+                'api_key': proxy_api_keys,
+                'networks': proxy_networks,
+                'tab_distribution': [3, 3]  # 3 tab cho mỗi proxy
+            }
+        # Nếu không, sử dụng proxy_api_key đơn nếu có
+        elif proxy_api_key:
             proxy_manager_class = ProxyManager
             proxy_manager_kwargs = {
                 'api_key': proxy_api_key,
