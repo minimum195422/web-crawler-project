@@ -135,7 +135,7 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 
 # Cấu hình timeout
 DEFAULT_TIMEOUT = int(os.getenv('DEFAULT_TIMEOUT', '30'))  # giây
-PAGE_LOAD_TIMEOUT = int(os.getenv('PAGE_LOAD_TIMEOUT', '60'))  # giây
+PAGE_LOAD_TIMEOUT = int(os.getenv('PAGE_LOAD_TIMEOUT', '30'))  # giây
 ELEMENT_WAIT_TIMEOUT = int(os.getenv('ELEMENT_WAIT_TIMEOUT', '10'))  # giây
 
 # Tần suất chạy DAG

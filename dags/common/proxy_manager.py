@@ -212,6 +212,99 @@ class ProxyManager:
             self.proxy_refresh_thread.join(timeout=5)
             self.logger.info("Đã dừng auto refresh proxy")
 
+
+class MultiProxyManager:
+    """
+    Quản lý nhiều proxy xoay, mỗi proxy quản lý một số tab nhất định
+    """
+    
+    def __init__(
+        self, 
+        api_keys: List[str], 
+        tabs_per_proxy: int = 3,
+        networks: Union[str, List[str]] = None, 
+        base_url: str = "https://proxyxoay.shop/api/get.php",
+        min_refresh_interval: int = 60,
+        max_refresh_interval: int = 120
+    ):
+        """
+        Khởi tạo MultiProxyManager
+        
+        Args:
+            api_keys: Danh sách API key cho các proxy khác nhau
+            tabs_per_proxy: Số tab tối đa cho mỗi proxy
+            networks: Danh sách nhà mạng cho proxy
+            base_url: URL API của dịch vụ proxy
+            min_refresh_interval: Thời gian tối thiểu giữa các lần làm mới proxy (giây)
+            max_refresh_interval: Thời gian tối đa giữa các lần làm mới proxy (giây)
+        """
+        self.logger = logging.getLogger("multi_proxy_manager")
+        self.api_keys = api_keys
+        self.tabs_per_proxy = tabs_per_proxy
+        self.networks = networks
+        self.base_url = base_url
+        self.min_refresh_interval = min_refresh_interval
+        self.max_refresh_interval = max_refresh_interval
+        
+        # Khởi tạo danh sách proxy manager
+        self.proxy_managers = []
+        for api_key in api_keys:
+            proxy_manager = ProxyManager(
+                api_key=api_key,
+                networks=networks,
+                base_url=base_url
+            )
+            self.proxy_managers.append(proxy_manager)
+        
+        self.total_tabs = len(api_keys) * tabs_per_proxy
+        self.logger.info(f"Đã khởi tạo {len(self.proxy_managers)} proxy manager với tổng cộng {self.total_tabs} tab")
+    
+    def get_proxy_for_tab(self, tab_index: int) -> Optional[ProxyManager]:
+        """
+        Lấy proxy manager phù hợp cho tab dựa trên index của tab
+        
+        Args:
+            tab_index: Index của tab (0-based)
+            
+        Returns:
+            ProxyManager phù hợp hoặc None nếu tab_index không hợp lệ
+        """
+        if tab_index < 0 or tab_index >= self.total_tabs:
+            self.logger.error(f"Tab index không hợp lệ: {tab_index}, phải < {self.total_tabs}")
+            return None
+        
+        proxy_index = tab_index // self.tabs_per_proxy
+        if proxy_index >= len(self.proxy_managers):
+            self.logger.error(f"Proxy index vượt quá số lượng proxy có sẵn: {proxy_index} >= {len(self.proxy_managers)}")
+            return None
+            
+        return self.proxy_managers[proxy_index]
+    
+    def start_auto_refresh(self):
+        """Bắt đầu auto refresh cho tất cả proxy manager"""
+        for i, proxy_manager in enumerate(self.proxy_managers):
+            self.logger.info(f"Bắt đầu auto refresh cho proxy manager #{i+1}")
+            proxy_manager.start_auto_refresh(
+                min_interval=self.min_refresh_interval, 
+                max_interval=self.max_refresh_interval
+            )
+    
+    def stop_auto_refresh(self):
+        """Dừng auto refresh cho tất cả proxy manager"""
+        for i, proxy_manager in enumerate(self.proxy_managers):
+            self.logger.info(f"Dừng auto refresh cho proxy manager #{i+1}")
+            proxy_manager.stop_auto_refresh()
+    
+    def get_max_tabs(self) -> int:
+        """
+        Lấy số tab tối đa có thể hỗ trợ
+        
+        Returns:
+            Số tab tối đa
+        """
+        return self.total_tabs
+
+
 # Ví dụ sử dụng
 if __name__ == "__main__":
     logging.basicConfig(
@@ -219,30 +312,32 @@ if __name__ == "__main__":
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
     
-    # Khởi tạo proxy manager
-    proxy_manager = ProxyManager(
-        api_key="your_api_key_here",
-        networks=["fpt", "viettel"]  # Có thể chọn một hoặc nhiều nhà mạng
+    # Khởi tạo multi proxy manager với 2 API key, mỗi proxy quản lý 3 tab
+    multi_proxy_manager = MultiProxyManager(
+        api_keys=["your_first_api_key", "your_second_api_key"],
+        tabs_per_proxy=3,
+        networks=["fpt", "viettel"]
     )
     
-    # Bắt đầu tự động đổi proxy mỗi 60-120 giây
-    proxy_manager.start_auto_refresh(min_interval=60, max_interval=120)
+    # Bắt đầu auto refresh
+    multi_proxy_manager.start_auto_refresh()
     
     try:
-        # Ví dụ sử dụng proxy trong requests
-        for i in range(10):
+        # Ví dụ sử dụng proxy cho từng tab
+        for i in range(multi_proxy_manager.get_max_tabs()):
+            proxy_manager = multi_proxy_manager.get_proxy_for_tab(i)
             proxies = proxy_manager.get_proxy_dict_for_requests()
-            print(f"Lần {i+1} - Đang sử dụng proxy: {proxies}")
+            print(f"Tab {i+1} - Đang sử dụng proxy: {proxies}")
             
             try:
                 # Thử kết nối với proxy
                 response = requests.get("https://api.ipify.org?format=json", proxies=proxies, timeout=10)
-                print(f"IP hiện tại: {response.json().get('ip')}")
+                print(f"Tab {i+1} - IP hiện tại: {response.json().get('ip')}")
             except Exception as e:
-                print(f"Lỗi kết nối: {str(e)}")
+                print(f"Tab {i+1} - Lỗi kết nối: {str(e)}")
                 
-            # Đợi 30 giây giữa các request
-            time.sleep(30)
+            # Đợi một chút giữa các request
+            time.sleep(3)
     finally:
         # Dừng auto refresh khi kết thúc
-        proxy_manager.stop_auto_refresh()
+        multi_proxy_manager.stop_auto_refresh()
