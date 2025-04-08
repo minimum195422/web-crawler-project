@@ -1,0 +1,9 @@
+# Mặc định sử dụng LF cho tất cả các file
+* text=auto eol=lf
+
+# Script shell luôn sử dụng LF
+*.sh text eol=lf
+
+# Windows batch scripts luôn sử dụng CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
