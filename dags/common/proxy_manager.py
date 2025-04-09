@@ -9,7 +9,6 @@ from datetime import datetime
 class ProxyManager:
     def __init__(self, 
                 api_key: Union[str, List[str]], 
-                networks: Union[str, List[str]] = None, 
                 base_url: str = "https://proxyxoay.shop/api/get.php",
                 tab_distribution: Optional[List[int]] = None):
         """
@@ -17,12 +16,10 @@ class ProxyManager:
         
         Args:
             api_key: API key đơn hoặc danh sách API key nhận được khi mua hàng
-            networks: Danh sách nhà mạng hoặc một nhà mạng cụ thể (vd: 'fpt', 'viettel', ...)
             base_url: URL API của dịch vụ proxy xoay
             tab_distribution: Phân bổ số tab cho mỗi proxy, mặc định là phân đều
         """
         self.base_url = base_url
-        self.networks = networks if isinstance(networks, list) else [networks] if networks else None
         
         # Chuyển đổi api_key thành list nếu là chuỗi đơn
         self.api_keys = api_key if isinstance(api_key, list) else [api_key]
@@ -65,13 +62,8 @@ class ProxyManager:
         try:
             params = {"key": proxy_instance["api_key"]}
             
-            # Thêm nhà mạng ngẫu nhiên
-            if self.networks:
-                network = random.choice(self.networks)
-                params["nhamang"] = network
-            else:
-                # Nếu không có danh sách nhà mạng, sử dụng "Random"
-                params["nhamang"] = "Random"
+            # Sử dụng "Random" cho nhà mạng
+            params["nhamang"] = "Random"
             
             # Thêm tỉnh thành "0" để lấy ngẫu nhiên
             params["tinhthanh"] = "0"
@@ -301,7 +293,6 @@ if __name__ == "__main__":
     # Khởi tạo proxy manager với 2 API key
     proxy_manager = ProxyManager(
         api_key=["your_api_key_1", "your_api_key_2"],
-        networks=["fpt", "viettel"],
         tab_distribution=[3, 3]  # 3 tab cho mỗi proxy
     )
     

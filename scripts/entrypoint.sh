@@ -14,8 +14,8 @@ if [ -z "${AWS_ACCESS_KEY_ID}" ] || [ -z "${AWS_SECRET_ACCESS_KEY}" ]; then
   echo "WARNING: AWS credentials are not set. S3 upload will not work."
 fi
 
-if [ -z "${PROXY_API_KEY}" ]; then
-  echo "WARNING: Proxy API key is not set. Proxy rotation will not work."
+if [ -z "${PROXY_API_KEYS}" ]; then
+  echo "WARNING: Proxy API keys are not set. Proxy rotation will not work."
 fi
 
 # Tạo thư mục cần thiết nếu chưa tồn tại

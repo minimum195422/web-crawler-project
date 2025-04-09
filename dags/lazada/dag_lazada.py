@@ -14,6 +14,7 @@ from airflow.providers.amazon.aws.transfers.local_to_s3 import LocalFilesystemTo
 from lazada.crawler_lazada import LazadaCrawler
 from lazada.parser_lazada import LazadaParser
 from common.proxy_manager import ProxyManager
+from common.constants import PROXY_API_KEYS, PROXY_API_URL, PROXY_MIN_INTERVAL, PROXY_MAX_INTERVAL
 
 # Cấu hình logging
 logger = logging.getLogger(__name__)
@@ -30,11 +31,6 @@ default_args = {
 }
 
 # Lấy cấu hình từ biến môi trường
-PROXY_API_KEY = os.getenv('PROXY_API_KEY')
-PROXY_API_URL = os.getenv('PROXY_API_URL', 'https://proxyxoay.shop/api/get.php')
-PROXY_NETWORKS = os.getenv('PROXY_NETWORKS', 'fpt,viettel').split(',')
-PROXY_MIN_INTERVAL = int(os.getenv('PROXY_MIN_INTERVAL', '60'))
-PROXY_MAX_INTERVAL = int(os.getenv('PROXY_MAX_INTERVAL', '120'))
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 S3_PREFIX = os.getenv('S3_PREFIX', 'crawled-data')
 S3_IMAGE_PREFIX = os.getenv('S3_IMAGE_PREFIX', 'images')
@@ -63,38 +59,19 @@ def crawl_lazada(**context):
     # Tạo proxy manager
     proxy_manager = None
     
-    # Kiểm tra xem có nhiều API key không
-    proxy_api_keys = os.getenv('PROXY_API_KEYS')
-    if proxy_api_keys:
-        # Phân tách các API key (được phân cách bởi dấu phẩy)
-        api_keys = [key.strip() for key in proxy_api_keys.split(',')]
-        
-        # Tạo proxy manager với nhiều API key
-        if len(api_keys) > 0:
-            proxy_manager = ProxyManager(
-                api_key=api_keys,
-                networks=PROXY_NETWORKS,
-                base_url=PROXY_API_URL,
-                tab_distribution=[3, 3]  # 3 tab cho mỗi proxy
-            )
-            proxy_manager.start_auto_refresh(
-                min_interval=PROXY_MIN_INTERVAL,
-                max_interval=PROXY_MAX_INTERVAL
-            )
-            logger.info(f"Đã khởi tạo proxy manager với {len(api_keys)} API key")
-    else:
-        # Sử dụng API key đơn nếu có
-        if PROXY_API_KEY:
-            proxy_manager = ProxyManager(
-                api_key=PROXY_API_KEY,
-                networks=PROXY_NETWORKS,
-                base_url=PROXY_API_URL
-            )
-            proxy_manager.start_auto_refresh(
-                min_interval=PROXY_MIN_INTERVAL,
-                max_interval=PROXY_MAX_INTERVAL
-            )
-            logger.info("Đã khởi tạo proxy manager với 1 API key")
+    # Kiểm tra nếu có API keys
+    if PROXY_API_KEYS:
+        # Tạo proxy manager với danh sách API keys
+        proxy_manager = ProxyManager(
+            api_key=PROXY_API_KEYS,
+            base_url=PROXY_API_URL,
+            tab_distribution=[3] * len(PROXY_API_KEYS)  # 3 tab cho mỗi proxy
+        )
+        proxy_manager.start_auto_refresh(
+            min_interval=PROXY_MIN_INTERVAL,
+            max_interval=PROXY_MAX_INTERVAL
+        )
+        logger.info(f"Đã khởi tạo proxy manager với {len(PROXY_API_KEYS)} API key")
     
     try:
         # Khởi tạo crawler

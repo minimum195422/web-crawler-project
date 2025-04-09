@@ -19,9 +19,8 @@ DEFAULT_DAG_ARGS = {
 }
 
 # Cấu hình Proxy
-PROXY_API_KEY = os.getenv('PROXY_API_KEY')
+PROXY_API_KEYS = os.getenv('PROXY_API_KEYS', '').split(',') if os.getenv('PROXY_API_KEYS') else []
 PROXY_API_URL = os.getenv('PROXY_API_URL', 'https://proxyxoay.shop/api/get.php')
-PROXY_NETWORKS = os.getenv('PROXY_NETWORKS', 'fpt,viettel').split(',')
 PROXY_MIN_INTERVAL = int(os.getenv('PROXY_MIN_INTERVAL', '60'))
 PROXY_MAX_INTERVAL = int(os.getenv('PROXY_MAX_INTERVAL', '120'))
 

@@ -122,8 +122,6 @@ class LazadaCrawlerOperator(GenericCrawlerOperator):
         headless: bool = True,
         homepage_url: str = "https://www.lazada.vn/",
         proxy_api_keys: Optional[List[str]] = None,
-        proxy_api_key: Optional[str] = None,  # Giữ lại để tương thích ngược
-        proxy_networks: Optional[List[str]] = None,
         *args, **kwargs
     ):
         """
@@ -137,8 +135,6 @@ class LazadaCrawlerOperator(GenericCrawlerOperator):
             headless: Chạy Chrome ở chế độ không có giao diện
             homepage_url: URL trang chủ Lazada
             proxy_api_keys: Danh sách API key cho các dịch vụ proxy
-            proxy_api_key: API key cho dịch vụ proxy (tương thích ngược)
-            proxy_networks: Danh sách nhà mạng cho proxy
         """
         # Import ở đây để tránh import circular
         from lazada.crawler_lazada import LazadaCrawler
@@ -162,20 +158,12 @@ class LazadaCrawlerOperator(GenericCrawlerOperator):
         proxy_manager_class = None
         proxy_manager_kwargs = None
         
-        # Ưu tiên proxy_api_keys nếu được cung cấp
+        # Sử dụng proxy_api_keys nếu được cung cấp
         if proxy_api_keys:
             proxy_manager_class = ProxyManager
             proxy_manager_kwargs = {
                 'api_key': proxy_api_keys,
-                'networks': proxy_networks,
-                'tab_distribution': [3, 3]  # 3 tab cho mỗi proxy
-            }
-        # Nếu không, sử dụng proxy_api_key đơn nếu có
-        elif proxy_api_key:
-            proxy_manager_class = ProxyManager
-            proxy_manager_kwargs = {
-                'api_key': proxy_api_key,
-                'networks': proxy_networks
+                'tab_distribution': [3] * len(proxy_api_keys)  # 3 tab cho mỗi proxy
             }
         
         super().__init__(
