@@ -1,48 +1,41 @@
 # Thư viện crawl
-scrapy==2.11.0
-selenium==4.15.2
-beautifulsoup4==4.12.2
-requests==2.31.0
-pyppeteer==1.0.2
-playwright==1.41.0
-fake-useragent==1.4.0
-python-dateutil==2.8.2
+scrapy>=2.11.0
+selenium>=4.15.0
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+fake-useragent>=1.4.0
+python-dateutil>=2.8.2
 
 # Thư viện xử lý dữ liệu
-pandas==2.1.3
-numpy==1.26.2
-lxml==4.9.3
-cssselect==1.2.0
-parsel==1.8.1
-python-slugify==8.0.1
-tldextract==5.1.1
+pandas>=1.5.0
+numpy>=1.22.0
+lxml>=4.9.0
+cssselect>=1.2.0
+parsel>=1.8.0
+python-slugify>=8.0.0
+tldextract>=5.0.0
 
 # Thư viện AWS
-boto3==1.34.0
-botocore==1.34.0
-s3fs==2023.10.0
+boto3>=1.26.0
+botocore>=1.29.0
+s3fs>=2023.6.0
 
 # Thư viện proxy và networking
-pysocks==1.7.1
-requests-ip-rotator==1.0.14
-stem==1.8.2
-requests[socks]==2.31.0
-    
+pysocks>=1.7.0
+requests-ip-rotator>=1.0.0
+stem>=1.8.0
+
 # Thư viện xác thực và bảo mật
-cryptography==41.0.5
-pyopenssl==23.3.0
+cryptography>=41.0.0
+pyopenssl>=23.3.0
 
 # Thư viện lưu trữ và nén
-python-snappy==0.6.1
-pyarrow==14.0.1
+python-snappy>=0.6.0
+pyarrow>=14.0.0
 
 # Thư viện logging và monitoring
-python-json-logger==2.0.7
-prometheus-client==0.18.0
+python-json-logger>=2.0.0
+prometheus-client>=0.18.0
 
-# Airflow providers
-apache-airflow-providers-amazon==8.15.0
-apache-airflow-providers-http==4.6.0
-apache-airflow-providers-postgres==5.7.1
-apache-airflow-providers-redis==3.4.1
-apache-airflow-providers-ssh==3.8.1
+# Không cài đặt Airflow providers ở đây vì có thể xung đột với image cơ sở
+# Nếu cần cài đặt thêm providers, hãy đảm bảo chúng tương thích với version Airflow

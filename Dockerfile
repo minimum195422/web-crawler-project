@@ -40,7 +40,7 @@ USER airflow
 
 # Cài đặt Python packages
 COPY requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+RUN pip install --no-cache-dir --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.7.1/constraints-3.9.txt" -r /tmp/requirements.txt
 
 # Tạo thư mục đầu ra cho dữ liệu crawl
 RUN mkdir -p /opt/airflow/data
